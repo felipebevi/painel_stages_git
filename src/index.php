@@ -114,6 +114,12 @@ $app->post('/deploy', function ($request, $response, $args) {
     return $response->withHeader('Content-Type', 'application/json');
 });
 
+// Rota padrão para verificar se o serviço está OK
+$app->get('/', function ($request, $response, $args) {
+    $response->getBody()->write("SERVICO OK");
+    return $response->withHeader('Content-Type', 'text/plain');
+});
+
 function getEnvPath($envName) {
     $stageNumber = intval(preg_replace('/[^0-9]/', '', $envName));
     if ($stageNumber <= 9) {
