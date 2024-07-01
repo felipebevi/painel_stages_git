@@ -6,7 +6,6 @@ error_reporting(E_ALL);
 require __DIR__ . '/../vendor/autoload.php';
 
 use Dotenv\Dotenv;
-use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\StreamFactory;
 
@@ -14,10 +13,7 @@ $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 $responseFactory = new ResponseFactory();
-$serverRequestFactory = new ServerRequestFactory();
 $streamFactory = new StreamFactory();
-
-$request = $serverRequestFactory->createServerRequestFromGlobals();
 
 function listEnvironments() {
     $stages = explode(',', $_ENV['STAGES']);
