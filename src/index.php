@@ -73,9 +73,9 @@ function listBranches($environment) {
 
 function getEnvironment($name) {
     $envPath = getEnvPath($name) . '/.env';
-    $resolvedEnvPath = realpath($envPath);
     $basePath = realpath($_ENV['BASE_PATH']);
 
+    $resolvedEnvPath = realpath($envPath);
     if ($resolvedEnvPath && strpos($resolvedEnvPath, $basePath) === 0 && file_exists($resolvedEnvPath)) {
         $envContent = file_get_contents($resolvedEnvPath);
     } else {
