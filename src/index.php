@@ -89,8 +89,11 @@ function listBranches($environment) {
         return json_encode(['error' => 'Invalid environment']);
     }
 
+    $sudoUser = $_ENV['SUDO_USER'];
+    $certPath = $_ENV['SUDO_CERT_PATH'];
+
     $cmd = "cd $repoPath && git rev-parse --is-inside-work-tree";
-    $result = executeRemoteCommand($cmd, $_ENV['SUDO_USER'], $_ENV['GIT_CERT_PATH']);
+    $result = executeRemoteCommand($cmd, $sudoUser, $certPath);
 
     if (trim(implode("\n", $result['output'])) !== 'true') {
         error_log("Error: The directory is not a Git repository.");
@@ -98,7 +101,7 @@ function listBranches($environment) {
     }
 
     $cmd = "cd $repoPath && GIT_SSL_NO_VERIFY=true git branch -r";
-    $result = executeRemoteCommand($cmd, $_ENV['SUDO_USER'], $_ENV['GIT_CERT_PATH']);
+    $result = executeRemoteCommand($cmd, $sudoUser, $certPath);
 
     if ($result['return_var'] !== 0) {
         return json_encode(['error' => 'Failed to list branches, command returned ' . $result['return_var']]);
@@ -113,8 +116,11 @@ function listBranches($environment) {
 
 function getEnvironment($name) {
     $envPath = getRepoPath($name) . '/.env';
+    $sudoUser = $_ENV['SUDO_USER'];
+    $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
+
     $cmd = "cat $envPath";
-    $result = executeRemoteCommand($cmd, $_ENV['SUDO_USER'], $_ENV['SUDO_CERT_PATH']);
+    $result = executeRemoteCommand($cmd, $sudoUser, $sudoCertPath);
 
     if ($result['return_var'] !== 0) {
         $envContent = ''; // Deixa em branco para edição e criação do ENV
@@ -130,7 +136,6 @@ function deploy($params) {
     $branch = $params['branch'];
     $envPath = getRepoPath($envName);
     $repoPath = $_ENV['GIT_REPO_PATH'];
-    $certPath = $_ENV['GIT_CERT_PATH'];
     $sudoUser = $_ENV['SUDO_USER'];
     $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
@@ -140,7 +145,7 @@ function deploy($params) {
         GIT_SSL_NO_VERIFY=true git checkout $branch &&
         sudo -u $sudoUser -i 'ssh -i $sudoCertPath sh " . __DIR__ . '/../scripts/deploy.sh' . " $envPath'
     ";
-    $result = executeRemoteCommand($cmd, $sudoUser, $certPath);
+    $result = executeRemoteCommand($cmd, $sudoUser, $sudoCertPath);
 
     return json_encode(['status' => $result['return_var'] == 0 ? 'success' : 'failure']);
 }
