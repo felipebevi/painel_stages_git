@@ -10,23 +10,20 @@ use Dotenv\Dotenv;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\StreamFactory;
-use Slim\Psr7\Factory\UploadedFileFactory;
 use Slim\Psr7\Factory\UriFactory;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 // Cria as fábricas PSR-17 e PSR-7
-$psr17Factory = new ResponseFactory();
+$responseFactory = new ResponseFactory();
 $serverRequestFactory = new ServerRequestFactory();
 $streamFactory = new StreamFactory();
-$uploadedFileFactory = new UploadedFileFactory();
 $uriFactory = new UriFactory();
 
 // Configura Slim para usar as fábricas PSR-17
-AppFactory::setResponseFactory($psr17Factory);
+AppFactory::setResponseFactory($responseFactory);
 AppFactory::setStreamFactory($streamFactory);
-AppFactory::setUploadedFileFactory($uploadedFileFactory);
 AppFactory::setServerRequestFactory($serverRequestFactory);
 AppFactory::setUriFactory($uriFactory);
 
