@@ -120,6 +120,12 @@ $app->get('/', function ($request, $response, $args) {
     return $response->withHeader('Content-Type', 'text/plain');
 });
 
+// Rota catch-all para capturar todas as outras requisições
+$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function ($request, $response, $args) {
+    $response->getBody()->write("SERVICO OK");
+    return $response->withHeader('Content-Type', 'text/plain');
+});
+
 function getEnvPath($envName) {
     $stageNumber = intval(preg_replace('/[^0-9]/', '', $envName));
     if ($stageNumber <= 9) {
