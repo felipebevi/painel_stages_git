@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    const apiUrl = '/painel_stages_git/src';
+    const apiUrl = '/painel_stages_git/src/index.php';
 
     // Fetch environments
     $.get(apiUrl + '/environments', function(data) {
