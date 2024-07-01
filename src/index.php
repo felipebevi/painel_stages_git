@@ -29,8 +29,8 @@ $app = AppFactory::create();
 $serverRequestCreator = ServerRequestCreatorFactory::create();
 $request = $serverRequestCreator->createServerRequestFromGlobals();
 
-// Listar ambientes
-$app->get('/environments', function ($request, $response, $args) {
+// Função para listar ambientes
+function listEnvironments($response) {
     $stages = explode(',', $_ENV['STAGES']);
     $data = [];
 
@@ -61,10 +61,10 @@ $app->get('/environments', function ($request, $response, $args) {
 
     $response->getBody()->write(json_encode($data));
     return $response->withHeader('Content-Type', 'application/json');
-});
+}
 
-// Listar branches do repositório
-$app->get('/branches', function ($request, $response, $args) {
+// Função para listar branches do repositório
+function listBranches($response) {
     $repoPath = $_ENV['GIT_REPO_PATH'];
     $certPath = $_ENV['GIT_CERT_PATH'];
     $branches = [];
@@ -73,12 +73,11 @@ $app->get('/branches', function ($request, $response, $args) {
 
     $response->getBody()->write(json_encode($branches));
     return $response->withHeader('Content-Type', 'application/json');
-});
+}
 
-// Listar ENV de um ambiente
-$app->get('/environment/{name}', function ($request, $response, $args) {
-    $envName = $args['name'];
-    $envPath = getEnvPath($envName) . '/.env';
+// Função para listar ENV de um ambiente
+function getEnvironment($name, $response) {
+    $envPath = getEnvPath($name) . '/.env';
 
     if (file_exists($envPath)) {
         $envContent = file_get_contents($envPath);
@@ -88,11 +87,10 @@ $app->get('/environment/{name}', function ($request, $response, $args) {
 
     $response->getBody()->write($envContent);
     return $response->withHeader('Content-Type', 'text/plain');
-});
+}
 
-// Atualizar ambiente com nova branch e executar script SH
-$app->post('/deploy', function ($request, $response, $args) {
-    $params = (array)$request->getParsedBody();
+// Função para atualizar ambiente com nova branch e executar script SH
+function deploy($params, $response) {
     $envName = $params['environment'];
     $branch = $params['branch'];
     $envPath = getEnvPath($envName);
@@ -112,19 +110,42 @@ $app->post('/deploy', function ($request, $response, $args) {
 
     $response->getBody()->write(json_encode(['status' => $return_var == 0 ? 'success' : 'failure']));
     return $response->withHeader('Content-Type', 'application/json');
-});
+}
 
-// Rota padrão para verificar se o serviço está OK
-$app->get('/', function ($request, $response, $args) {
-    $response->getBody()->write("SERVICO OK");
-    return $response->withHeader('Content-Type', 'text/plain');
-});
+// Roteamento baseado em query string
+$path = isset($_GET['path']) ? $_GET['path'] : '';
+switch ($path) {
+    case 'environments':
+        $response = listEnvironments($responseFactory->createResponse());
+        break;
+    case 'branches':
+        $response = listBranches($responseFactory->createResponse());
+        break;
+    case 'environment':
+        if (isset($_GET['name'])) {
+            $response = getEnvironment($_GET['name'], $responseFactory->createResponse());
+        } else {
+            $response = $responseFactory->createResponse(400)->withBody($streamFactory->createStream('Missing parameter: name'));
+        }
+        break;
+    case 'deploy':
+        $params = (array)$request->getParsedBody();
+        $response = deploy($params, $responseFactory->createResponse());
+        break;
+    default:
+        $response = $responseFactory->createResponse()->withBody($streamFactory->createStream('SERVICO OK'));
+        break;
+}
 
-// Rota catch-all para capturar todas as outras requisições
-$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function ($request, $response, $args) {
-    $response->getBody()->write("SERVICO OK");
-    return $response->withHeader('Content-Type', 'text/plain');
-});
+$headers = $response->getHeaders();
+foreach ($headers as $name => $values) {
+    foreach ($values as $value) {
+        header(sprintf('%s: %s', $name, $value), false);
+    }
+}
+
+http_response_code($response->getStatusCode());
+echo $response->getBody();
 
 function getEnvPath($envName) {
     $stageNumber = intval(preg_replace('/[^0-9]/', '', $envName));
@@ -167,5 +188,3 @@ function generateUrl($envName, $stageNumber) {
         }
     }
 }
-
-$app->run($request);

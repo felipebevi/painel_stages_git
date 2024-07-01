@@ -1,8 +1,8 @@
 $(document).ready(function() {
-    const apiUrl = '/painel_stages_git/src';
+    const baseUrl = '/painel_stages_git/src/index.php'; // Base URL para as requisições
 
     // Fetch environments
-    $.get(apiUrl + '/environments', function(data) {
+    $.get(baseUrl, { path: 'environments' }, function(data) {
         const environments = JSON.parse(data);
         environments.forEach(function(env) {
             $('#environmentSelect').append(new Option(env.name, env.name));
@@ -10,7 +10,7 @@ $(document).ready(function() {
     });
 
     // Fetch branches
-    $.get(apiUrl + '/branches', function(data) {
+    $.get(baseUrl, { path: 'branches' }, function(data) {
         const branches = JSON.parse(data);
         branches.forEach(function(branch) {
             $('#branchSelect').append(new Option(branch, branch));
@@ -25,7 +25,7 @@ $(document).ready(function() {
             return;
         }
 
-        $.get(apiUrl + '/environment/' + environment, function(data) {
+        $.get(baseUrl, { path: 'environment', name: environment }, function(data) {
             $('#envTextarea').val(data);
             $('#envModal').modal('show');
         });
@@ -36,7 +36,7 @@ $(document).ready(function() {
         const environment = $('#environmentSelect').val();
         const envContent = $('#envTextarea').val();
         $.ajax({
-            url: apiUrl + '/environment/' + environment,
+            url: baseUrl + '?path=environment&name=' + environment,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ content: envContent }),
@@ -68,7 +68,7 @@ $(document).ready(function() {
         };
 
         $.ajax({
-            url: apiUrl + '/deploy',
+            url: baseUrl + '?path=deploy',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),
