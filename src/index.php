@@ -47,14 +47,24 @@ function listEnvironments() {
     return json_encode($data);
 }
 
-function getRepoUrl($environment) {
-    $baseRepoUrl = $_ENV['BASE_REPO_URL'];
-    if (strpos($environment, 'api') !== false) {
-        return "$baseRepoUrl/{$_ENV['API_REPO']}";
-    } elseif (strpos($environment, 'off') !== false) {
-        return "$baseRepoUrl/{$_ENV['BACKOFFICE_REPO']}";
+function getRepoPath($environment) {
+    $stageNumber = intval(preg_replace('/[^0-9]/', '', $environment));
+    if ($stageNumber <= 9) {
+        if (strpos($environment, 'api') !== false) {
+            return "/home/st{$stageNumber}bsapi/web/stage{$stageNumber}-api.bs2bet.com/public_html";
+        } elseif (strpos($environment, 'off') !== false) {
+            return "/home/st{$stageNumber}bsoff/web/stage{$stageNumber}-backoffice.bs2bet.com/public_html";
+        } else {
+            return "/home/stage{$stageNumber}bs/web/stage{$stageNumber}bs.bs2bet.com/public_html";
+        }
     } else {
-        return "$baseRepoUrl/{$_ENV['WEB_APP_REPO']}";
+        if (strpos($environment, 'ap') !== false) {
+            return "/home/st{$stageNumber}bsap/web/stage{$stageNumber}-api.bs2bet.com/public_html";
+        } elseif (strpos($environment, 'of') !== false) {
+            return "/home/st{$stageNumber}bsof/web/stage{$stageNumber}-backoffice.bs2bet.com/public_html";
+        } else {
+            return "/home/stage{$stageNumber}b/web/stage{$stageNumber}.bs2bet.com/public_html";
+        }
     }
 }
 
@@ -68,18 +78,17 @@ function executeShellCommand($cmd) {
 }
 
 function listBranches($environment) {
-    $repoUrl = getRepoUrl($environment);
+    $repoPath = getRepoPath($environment);
     
     error_log("Environment: $environment");
-    error_log("Repository URL: $repoUrl");
+    error_log("Repository Path: $repoPath");
 
-    if (!$repoUrl) {
-        error_log("Error: Repository URL for $environment not found.");
+    if (!$repoPath) {
+        error_log("Error: Repository path for $environment not found.");
         return json_encode(['error' => 'Invalid environment']);
     }
 
-    $certPath = $_ENV['GIT_CERT_PATH'];
-    $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git ls-remote --heads"; //  $repoUrl
+    $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i {$_ENV['GIT_CERT_PATH']}' git -C $repoPath branch -r";
     $result = executeShellCommand($cmd);
 
     if ($result['return_var'] !== 0) {
@@ -94,7 +103,7 @@ function listBranches($environment) {
 }
 
 function getEnvironment($name) {
-    $envPath = getEnvPath($name) . '/.env';
+    $envPath = getRepoPath($name) . '/.env';
     $sudoUser = $_ENV['SUDO_USER'];
     $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
@@ -113,7 +122,7 @@ function getEnvironment($name) {
 function deploy($params) {
     $envName = $params['environment'];
     $branch = $params['branch'];
-    $envPath = getEnvPath($envName);
+    $envPath = getRepoPath($envName);
     $repoPath = $_ENV['GIT_REPO_PATH'];
     $certPath = $_ENV['GIT_CERT_PATH'];
     $sudoUser = $_ENV['SUDO_USER'];
@@ -131,24 +140,7 @@ function deploy($params) {
 }
 
 function getEnvPath($envName) {
-    $stageNumber = intval(preg_replace('/[^0-9]/', '', $envName));
-    if ($stageNumber <= 9) {
-        if (strpos($envName, 'api') !== false) {
-            return "/home/st{$stageNumber}bsapi/web/stage{$stageNumber}-api.bs2bet.com/public_html";
-        } elseif (strpos($envName, 'off') !== false) {
-            return "/home/st{$stageNumber}bsoff/web/stage{$stageNumber}-backoffice.bs2bet.com/public_html";
-        } else {
-            return "/home/stage{$stageNumber}bs/web/stage{$stageNumber}bs.bs2bet.com/public_html";
-        }
-    } else {
-        if (strpos($envName, 'ap') !== false) {
-            return "/home/st{$stageNumber}bsap/web/stage{$stageNumber}-api.bs2bet.com/public_html";
-        } elseif (strpos($envName, 'of') !== false) {
-            return "/home/st{$stageNumber}bsof/web/stage{$stageNumber}-backoffice.bs2bet.com/public_html";
-        } else {
-            return "/home/stage{$stageNumber}b/web/stage{$stageNumber}.bs2bet.com/public_html";
-        }
-    }
+    return getRepoPath($envName);
 }
 
 function generateUrl($envName, $stageNumber) {
