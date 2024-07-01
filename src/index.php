@@ -1,6 +1,6 @@
 <?php
 
-ini_set('display_errors',true);
+ini_set('display_errors', true);
 error_reporting(E_ALL);
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -12,8 +12,16 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
+// Cria a fábrica PSR-17
 $psr17Factory = new Psr17Factory();
-$app = AppFactory::create($psr17Factory, $psr17Factory, $psr17Factory);
+
+// Configura Slim para usar as fábricas PSR-17
+AppFactory::setResponseFactory($psr17Factory);
+AppFactory::setStreamFactory($psr17Factory);
+AppFactory::setUploadedFileFactory($psr17Factory);
+AppFactory::setServerRequestCreator($psr17Factory);
+
+$app = AppFactory::create();
 
 // Listar ambientes
 $app->get('/environments', function ($request, $response, $args) {
