@@ -79,13 +79,15 @@ $app->post('/deploy', function ($request, $response, $args) {
     $envPath = getEnvPath($envName);
     $repoPath = $_ENV['GIT_REPO_PATH'];
     $certPath = $_ENV['GIT_CERT_PATH'];
+    $sudoUser = $_ENV['SUDO_USER'];
+    $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
     // Trocar para o branch e executar script SH
     $cmd = "
         cd $repoPath &&
         GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git fetch origin &&
         GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git checkout $branch &&
-        sudo -u {$_ENV['SUDO_USER']} sh " . __DIR__ . '/../scripts/deploy.sh' . " $envPath
+        sudo -u $sudoUser -i 'ssh -i $sudoCertPath sh " . __DIR__ . '/../scripts/deploy.sh' . " $envPath'
     ";
     exec($cmd, $output, $return_var);
 
