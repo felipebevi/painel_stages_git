@@ -49,9 +49,9 @@ function listEnvironments() {
 
 function listBranches($environment) {
     $repoUrls = [
-        'stage1bs' => 'https://github.com/bs2-bet/web-app-multi-theme',
-        'st1bsapi' => 'https://github.com/bs2-bet/api',
-        'st1bsoff' => 'https://github.com/bs2-bet/backoffice-web-app'
+        'stage1bs' => 'git@github.com:bs2-bet/web-app-multi-theme.git',
+        'st1bsapi' => 'git@github.com:bs2-bet/api.git',
+        'st1bsoff' => 'git@github.com:bs2-bet/backoffice-web-app.git'
     ];
 
     if (!isset($repoUrls[$environment])) {

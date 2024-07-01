@@ -45,13 +45,13 @@ $(document).ready(function() {
         $.get(baseUrl, { path: 'branches', environment: environment }, function(data) {
             console.log('Branches response:', data);
             const branches = safeJsonParse(data);
-            if (branches) {
+            if (branches && Array.isArray(branches)) {
                 $('#branchSelect').empty();
                 branches.forEach(function(branch) {
                     $('#branchSelect').append(new Option(branch, branch));
                 });
             } else {
-                console.log('Failed to load branches');
+                console.log('Failed to load branches: ', branches);
             }
         }).fail(function(jqXHR, textStatus, errorThrown) {
             console.error('AJAX error: ', textStatus, ' : ', errorThrown);
