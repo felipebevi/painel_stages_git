@@ -136,9 +136,7 @@ function saveEnvironment($name, $content) {
     $sudoUser = $_ENV['SUDO_USER'];
     $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
-    $decodedContent = base64_decode($content);
-    $escapedContent = escapeshellarg($decodedContent);
-    $cmd = "echo -e $escapedContent > $envPath";
+    $cmd = "echo -e $(echo $content | base64 --decode) > $envPath";
     error_log("Executing save environment command: $cmd");
     $result = executeRemoteCommand($cmd, $sudoUser, $sudoCertPath);
 
