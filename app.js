@@ -86,7 +86,8 @@ $(document).ready(function() {
         }
 
         $.get(baseUrl, { path: 'environment', name: environment }, function(data) {
-            $('#envTextarea').val(data);
+            const decodedData = atob(data);
+            $('#envTextarea').val(decodedData);
             $('#envModal').modal('show');
         }).fail(function(jqXHR, textStatus, errorThrown) {
             console.error('AJAX error: ', textStatus, ' : ', errorThrown);
@@ -96,7 +97,7 @@ $(document).ready(function() {
     // Save ENV changes
     $('#saveEnvBtn').click(function() {
         const environment = $('#environmentSelect').val();
-        const envContent = $('#envTextarea').val();
+        const envContent = btoa($('#envTextarea').val());
         $.ajax({
             url: baseUrl + '?path=environment',
             method: 'POST',
