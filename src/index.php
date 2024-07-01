@@ -7,17 +7,28 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
 use Dotenv\Dotenv;
-use Nyholm\Psr7\Factory\Psr17Factory;
+use Slim\Psr7\Factory\ServerRequestFactory;
+use Slim\Psr7\Factory\ResponseFactory;
+use Slim\Psr7\Factory\StreamFactory;
+use Slim\Psr7\Factory\UploadedFileFactory;
+use Slim\Psr7\Factory\UriFactory;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
-// Cria a fábrica PSR-17
-$psr17Factory = new Psr17Factory();
+// Cria as fábricas PSR-17 e PSR-7
+$psr17Factory = new ResponseFactory();
+$serverRequestFactory = new ServerRequestFactory();
+$streamFactory = new StreamFactory();
+$uploadedFileFactory = new UploadedFileFactory();
+$uriFactory = new UriFactory();
 
 // Configura Slim para usar as fábricas PSR-17
 AppFactory::setResponseFactory($psr17Factory);
-AppFactory::setStreamFactory($psr17Factory);
+AppFactory::setStreamFactory($streamFactory);
+AppFactory::setUploadedFileFactory($uploadedFileFactory);
+AppFactory::setServerRequestFactory($serverRequestFactory);
+AppFactory::setUriFactory($uriFactory);
 
 $app = AppFactory::create();
 
