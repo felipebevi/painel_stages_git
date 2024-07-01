@@ -68,8 +68,10 @@ function listBranches($response) {
     $repoPath = $_ENV['GIT_REPO_PATH'];
     $certPath = $_ENV['GIT_CERT_PATH'];
     $branches = [];
+    $comm = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git -C $repoPath branch -r";
 
-    exec("GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git -C $repoPath branch -r", $branches);
+    exec($comm, $branches);
+    error_log(print_r(array($comm, $branches),true));
 
     $response->getBody()->write(json_encode($branches));
     return $response->withHeader('Content-Type', 'application/json');
