@@ -69,7 +69,7 @@ function getRepoPath($environment) {
 }
 
 function executeRemoteCommand($cmd, $user, $certPath, $sendGit=true) {
-    $cmd = $sendGit?"git config --global --add safe.directory \\\"*\\\" && ".$cmd:$cmd;
+    $cmd = $sendGit ? "git config --global --add safe.directory \\\"*\\\" && " . $cmd : $cmd;
     $remoteCmd = "ssh -i $certPath -p 35035 $user@localhost 'sudo -u root bash -c \"$cmd\"'";
     error_log("Executing remote command: $remoteCmd");
     exec($remoteCmd . ' 2>&1', $output, $return_var);
@@ -137,7 +137,7 @@ function saveEnvironment($name, $content) {
     $sudoUser = $_ENV['SUDO_USER'];
     $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
-    $cmd = "echo -e $(echo $content | base64 --decode) > $envPath";
+    $cmd = "echo $content | base64 --decode | sudo tee $envPath > /dev/null";
     error_log("Executing save environment command: $cmd");
     $result = executeRemoteCommand($cmd, $sudoUser, $sudoCertPath, false);
 
