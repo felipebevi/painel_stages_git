@@ -48,11 +48,17 @@ function listEnvironments() {
 }
 
 function listBranches($environment) {
-    $repoUrl = getenv(strtoupper($environment) . '_REPO_URL');
-    if (!$repoUrl) {
+    $repoUrls = [
+        'stage1bs' => 'git@github.com:bs2-bet/web-app-multi-theme.git',
+        'st1bsapi' => 'git@github.com:bs2-bet/api.git',
+        'st1bsoff' => 'git@github.com:bs2-bet/backoffice-web-app.git'
+    ];
+
+    if (!isset($repoUrls[$environment])) {
         return json_encode(['error' => 'Invalid environment']);
     }
 
+    $repoUrl = $repoUrls[$environment];
     $certPath = $_ENV['GIT_CERT_PATH'];
     $branches = [];
     $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git ls-remote --heads $repoUrl";
@@ -73,11 +79,9 @@ function listBranches($environment) {
 
 function getEnvironment($name) {
     $envPath = getEnvPath($name) . '/.env';
-    $basePath = realpath($_ENV['BASE_PATH']);
 
-    $resolvedEnvPath = realpath($envPath);
-    if ($resolvedEnvPath && strpos($resolvedEnvPath, $basePath) === 0 && file_exists($resolvedEnvPath)) {
-        $envContent = file_get_contents($resolvedEnvPath);
+    if (is_readable($envPath)) {
+        $envContent = file_get_contents($envPath);
     } else {
         $envContent = ''; // Deixa em branco para edição e criação do ENV
     }
