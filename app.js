@@ -1,12 +1,22 @@
 $(document).ready(function() {
     const baseUrl = '/painel_stages_git/src/index.php'; // Base URL para as requisições
 
+    // Função para verificar se uma string é JSON
+    function isJsonString(str) {
+        try {
+            JSON.parse(str);
+        } catch (e) {
+            return false;
+        }
+        return true;
+    }
+
     // Função para lidar com respostas JSON de forma segura
     function safeJsonParse(responseText) {
-        try {
+        if (isJsonString(responseText)) {
             return JSON.parse(responseText);
-        } catch (e) {
-            console.error('JSON parse error: ', e, 'Response Text:', responseText);
+        } else {
+            console.error('Response is not valid JSON: ', responseText);
             return null;
         }
     }
