@@ -18,8 +18,6 @@ $psr17Factory = new Psr17Factory();
 // Configura Slim para usar as fábricas PSR-17
 AppFactory::setResponseFactory($psr17Factory);
 AppFactory::setStreamFactory($psr17Factory);
-AppFactory::setUploadedFileFactory($psr17Factory);
-AppFactory::setServerRequestCreator($psr17Factory);
 
 $app = AppFactory::create();
 
