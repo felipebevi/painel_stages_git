@@ -6,7 +6,7 @@ $(document).ready(function() {
         try {
             return JSON.parse(responseText);
         } catch (e) {
-            console.error('JSON parse error: ', e);
+            console.error('JSON parse error: ', e, 'Response Text:', responseText);
             return null;
         }
     }
@@ -19,8 +19,10 @@ $(document).ready(function() {
                 $('#environmentSelect').append(new Option(env.name, env.name));
             });
         } else {
-            alert('Failed to load environments');
+            console.log('Failed to load environments');
         }
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.error('AJAX error: ', textStatus, ' : ', errorThrown);
     });
 
     // Fetch branches
@@ -31,21 +33,25 @@ $(document).ready(function() {
                 $('#branchSelect').append(new Option(branch, branch));
             });
         } else {
-            alert('Failed to load branches');
+            console.log('Failed to load branches');
         }
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.error('AJAX error: ', textStatus, ' : ', errorThrown);
     });
 
     // Edit ENV button click
     $('#editEnvBtn').click(function() {
         const environment = $('#environmentSelect').val();
         if (!environment) {
-            alert('Please select an environment first');
+            console.log('Please select an environment first');
             return;
         }
 
         $.get(baseUrl, { path: 'environment', name: environment }, function(data) {
             $('#envTextarea').val(data);
             $('#envModal').modal('show');
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error('AJAX error: ', textStatus, ' : ', errorThrown);
         });
     });
 
@@ -59,11 +65,11 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify({ content: envContent }),
             success: function(response) {
-                alert('ENV updated successfully');
+                console.log('ENV updated successfully');
                 $('#envModal').modal('hide');
             },
-            error: function() {
-                alert('Failed to update ENV');
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('Failed to update ENV: ', textStatus, ' : ', errorThrown);
             }
         });
     });
@@ -75,7 +81,7 @@ $(document).ready(function() {
         const envContent = $('#envTextarea').val();
 
         if (!environment || !branch) {
-            alert('Please select both environment and branch');
+            console.log('Please select both environment and branch');
             return;
         }
 
@@ -93,13 +99,13 @@ $(document).ready(function() {
             success: function(response) {
                 const result = safeJsonParse(response);
                 if (result && result.status === 'success') {
-                    alert('Deployment successful');
+                    console.log('Deployment successful');
                 } else {
-                    alert('Deployment failed');
+                    console.log('Deployment failed');
                 }
             },
-            error: function() {
-                alert('Deployment failed');
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('Deployment failed: ', textStatus, ' : ', errorThrown);
             }
         });
     });
