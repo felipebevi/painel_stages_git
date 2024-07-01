@@ -13,6 +13,11 @@ $(document).ready(function() {
 
     // Função para lidar com respostas JSON de forma segura
     function safeJsonParse(responseText) {
+        if (typeof responseText === 'object') {
+            console.log('Response is already an object: ', responseText);
+            return responseText;
+        }
+        
         if (isJsonString(responseText)) {
             return JSON.parse(responseText);
         } else {
@@ -23,6 +28,7 @@ $(document).ready(function() {
 
     // Fetch environments
     $.get(baseUrl, { path: 'environments' }, function(data) {
+        console.log('Environments response:', data);
         const environments = safeJsonParse(data);
         if (environments) {
             environments.forEach(function(env) {
@@ -37,6 +43,7 @@ $(document).ready(function() {
 
     // Fetch branches
     $.get(baseUrl, { path: 'branches' }, function(data) {
+        console.log('Branches response:', data);
         const branches = safeJsonParse(data);
         if (branches) {
             branches.forEach(function(branch) {
