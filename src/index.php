@@ -48,7 +48,13 @@ function listEnvironments() {
 }
 
 function listBranches($environment) {
-    $repoUrl = getenv(strtoupper($environment) . '_REPO_URL');
+    $envVarName = strtoupper($environment) . '_REPO_URL';
+    $repoUrl = getenv($envVarName);
+    
+    error_log("Environment: $environment");
+    error_log("Environment Variable: $envVarName");
+    error_log("Repository URL: $repoUrl");
+
     if (!$repoUrl) {
         return json_encode(['error' => 'Invalid environment']);
     }
@@ -57,8 +63,10 @@ function listBranches($environment) {
     $branches = [];
     $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git ls-remote --heads $repoUrl";
 
+    error_log("Executing command: $cmd");
     exec($cmd, $branches, $return_var);
-    error_log(print_r(array($cmd, $branches), true));
+    error_log("Command result: " . print_r($branches, true));
+    error_log("Command return value: $return_var");
 
     if ($return_var !== 0) {
         return json_encode(['error' => 'Failed to list branches']);
@@ -77,7 +85,10 @@ function getEnvironment($name) {
     $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
     $cmd = "sudo -u $sudoUser -i 'ssh -i $sudoCertPath cat $envPath'";
+    error_log("Executing command: $cmd");
     exec($cmd, $output, $return_var);
+    error_log("Command result: " . print_r($output, true));
+    error_log("Command return value: $return_var");
 
     if ($return_var !== 0) {
         $envContent = ''; // Deixa em branco para edição e criação do ENV
@@ -103,7 +114,11 @@ function deploy($params) {
         GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git checkout $branch &&
         sudo -u $sudoUser -i 'ssh -i $sudoCertPath sh " . __DIR__ . '/../scripts/deploy.sh' . " $envPath'
     ";
+
+    error_log("Executing command: $cmd");
     exec($cmd, $output, $return_var);
+    error_log("Command result: " . print_r($output, true));
+    error_log("Command return value: $return_var");
 
     return json_encode(['status' => $return_var == 0 ? 'success' : 'failure']);
 }
