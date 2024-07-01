@@ -98,10 +98,10 @@ $(document).ready(function() {
         const environment = $('#environmentSelect').val();
         const envContent = $('#envTextarea').val();
         $.ajax({
-            url: baseUrl + '?path=environment&name=' + environment,
+            url: baseUrl + '?path=environment',
             method: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ content: envContent }),
+            data: JSON.stringify({ name: environment, content: envContent }),
             success: function(response) {
                 console.log('ENV updated successfully');
                 $('#envModal').modal('hide');

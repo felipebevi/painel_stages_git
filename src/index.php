@@ -136,7 +136,7 @@ function saveEnvironment($name, $content) {
     $sudoUser = $_ENV['SUDO_USER'];
     $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
-    $cmd = "echo " . escapeshellarg($content) . " | sudo tee $envPath";
+    $cmd = "echo " . escapeshellarg($content) . " | sudo tee $envPath > /dev/null";
     $result = executeRemoteCommand($cmd, $sudoUser, $sudoCertPath);
 
     return $result['return_var'] === 0 ? 'success' : 'failure';
