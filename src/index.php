@@ -47,11 +47,21 @@ function listEnvironments() {
     return json_encode($data);
 }
 
-function listBranches() {
-    $repoPath = $_ENV['GIT_REPO_PATH'];
+function listBranches($environment) {
+    $repoUrls = [
+        'stage1bs' => 'https://github.com/bs2-bet/web-app-multi-theme',
+        'st1bsapi' => 'https://github.com/bs2-bet/api',
+        'st1bsoff' => 'https://github.com/bs2-bet/backoffice-web-app'
+    ];
+
+    if (!isset($repoUrls[$environment])) {
+        return json_encode(['error' => 'Invalid environment']);
+    }
+
+    $repoUrl = $repoUrls[$environment];
     $certPath = $_ENV['GIT_CERT_PATH'];
     $branches = [];
-    $cmd = "cd $repoPath && GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git branch -r";
+    $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git ls-remote --heads $repoUrl";
 
     exec($cmd, $branches, $return_var);
     error_log(print_r(array($cmd, $branches), true));
@@ -60,7 +70,11 @@ function listBranches() {
         return json_encode(['error' => 'Failed to list branches']);
     }
 
-    return json_encode($branches);
+    $branchNames = array_map(function($line) {
+        return preg_replace('/^.*refs\/heads\//', '', $line);
+    }, $branches);
+
+    return json_encode($branchNames);
 }
 
 function getEnvironment($name) {
@@ -147,7 +161,12 @@ switch ($path) {
         $responseBody = listEnvironments();
         break;
     case 'branches':
-        $responseBody = listBranches();
+        if (isset($_GET['environment'])) {
+            $responseBody = listBranches($_GET['environment']);
+        } else {
+            http_response_code(400);
+            $responseBody = json_encode(['error' => 'Missing parameter: environment']);
+        }
         break;
     case 'environment':
         if (isset($_GET['name'])) {

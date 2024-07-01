@@ -1,7 +1,6 @@
 $(document).ready(function() {
     const baseUrl = '/painel_stages_git/src/index.php'; // Base URL para as requisições
 
-    // Função para verificar se uma string é JSON
     function isJsonString(str) {
         try {
             JSON.parse(str);
@@ -11,7 +10,6 @@ $(document).ready(function() {
         return true;
     }
 
-    // Função para lidar com respostas JSON de forma segura
     function safeJsonParse(responseText) {
         if (typeof responseText === 'object') {
             console.log('Response is already an object: ', responseText);
@@ -41,19 +39,23 @@ $(document).ready(function() {
         console.error('AJAX error: ', textStatus, ' : ', errorThrown);
     });
 
-    // Fetch branches
-    $.get(baseUrl, { path: 'branches' }, function(data) {
-        console.log('Branches response:', data);
-        const branches = safeJsonParse(data);
-        if (branches) {
-            branches.forEach(function(branch) {
-                $('#branchSelect').append(new Option(branch, branch));
-            });
-        } else {
-            console.log('Failed to load branches');
-        }
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-        console.error('AJAX error: ', textStatus, ' : ', errorThrown);
+    // Fetch branches when an environment is selected
+    $('#environmentSelect').change(function() {
+        const environment = $(this).val();
+        $.get(baseUrl, { path: 'branches', environment: environment }, function(data) {
+            console.log('Branches response:', data);
+            const branches = safeJsonParse(data);
+            if (branches) {
+                $('#branchSelect').empty();
+                branches.forEach(function(branch) {
+                    $('#branchSelect').append(new Option(branch, branch));
+                });
+            } else {
+                console.log('Failed to load branches');
+            }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error('AJAX error: ', textStatus, ' : ', errorThrown);
+        });
     });
 
     // Edit ENV button click
