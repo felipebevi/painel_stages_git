@@ -69,7 +69,7 @@ function getRepoPath($environment) {
 }
 
 function executeRemoteCommand($cmd, $user, $certPath) {
-    $remoteCmd = "ssh -i $certPath -p 35035 $user@localhost 'sudo -u root bash -c \"git config --global --add safe.directory \\\"*\\\" && $cmd\"'";
+    $remoteCmd = "ssh -i $certPath -p 35035 $user@localhost 'sudo -u root bash -c \"git config --global --add safe.directory '*' && $cmd\"'";
     error_log("Executing remote command: $remoteCmd");
     exec($remoteCmd . ' 2>&1', $output, $return_var);
     error_log("Command result: " . print_r($output, true));
@@ -129,6 +129,17 @@ function getEnvironment($name) {
     }
 
     return $envContent;
+}
+
+function saveEnvironment($name, $content) {
+    $envPath = getRepoPath($name) . '/.env';
+    $sudoUser = $_ENV['SUDO_USER'];
+    $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
+
+    $cmd = "echo " . escapeshellarg($content) . " | sudo tee $envPath";
+    $result = executeRemoteCommand($cmd, $sudoUser, $sudoCertPath);
+
+    return $result['return_var'] === 0 ? 'success' : 'failure';
 }
 
 function deploy($params) {
@@ -193,12 +204,22 @@ switch ($path) {
         }
         break;
     case 'environment':
-        if (isset($_GET['name'])) {
-            $responseBody = getEnvironment($_GET['name']);
-            $contentType = 'text/plain';
-        } else {
-            http_response_code(400);
-            $responseBody = 'Missing parameter: name';
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            if (isset($_GET['name'])) {
+                $responseBody = getEnvironment($_GET['name']);
+                $contentType = 'text/plain';
+            } else {
+                http_response_code(400);
+                $responseBody = 'Missing parameter: name';
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $params = (array)json_decode(file_get_contents('php://input'), true);
+            if (isset($params['name']) && isset($params['content'])) {
+                $responseBody = json_encode(['status' => saveEnvironment($params['name'], $params['content'])]);
+            } else {
+                http_response_code(400);
+                $responseBody = json_encode(['error' => 'Missing parameters: name or content']);
+            }
         }
         break;
     case 'deploy':
