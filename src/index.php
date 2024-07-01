@@ -68,9 +68,10 @@ function getRepoPath($environment) {
     }
 }
 
-function executeShellCommand($cmd) {
-    error_log("Executing command: $cmd");
-    exec($cmd . ' 2>&1', $output, $return_var);
+function executeRemoteCommand($cmd, $user, $certPath) {
+    $remoteCmd = "ssh -i $certPath $user@localhost '$cmd'";
+    error_log("Executing remote command: $remoteCmd");
+    exec($remoteCmd . ' 2>&1', $output, $return_var);
     error_log("Command result: " . print_r($output, true));
     error_log("Command return value: $return_var");
 
@@ -88,17 +89,16 @@ function listBranches($environment) {
         return json_encode(['error' => 'Invalid environment']);
     }
 
-    // Verifica se o diretório é um repositório Git
     $cmd = "cd $repoPath && git rev-parse --is-inside-work-tree";
-    $result = executeShellCommand($cmd);
+    $result = executeRemoteCommand($cmd, $_ENV['SUDO_USER'], $_ENV['GIT_CERT_PATH']);
 
     if (trim(implode("\n", $result['output'])) !== 'true') {
         error_log("Error: The directory is not a Git repository.");
         return json_encode(['error' => 'The directory is not a Git repository.']);
     }
 
-    $cmd = "cd $repoPath && GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i {$_ENV['GIT_CERT_PATH']}' git branch -r";
-    $result = executeShellCommand($cmd);
+    $cmd = "cd $repoPath && GIT_SSL_NO_VERIFY=true git branch -r";
+    $result = executeRemoteCommand($cmd, $_ENV['SUDO_USER'], $_ENV['GIT_CERT_PATH']);
 
     if ($result['return_var'] !== 0) {
         return json_encode(['error' => 'Failed to list branches, command returned ' . $result['return_var']]);
@@ -113,11 +113,8 @@ function listBranches($environment) {
 
 function getEnvironment($name) {
     $envPath = getRepoPath($name) . '/.env';
-    $sudoUser = $_ENV['SUDO_USER'];
-    $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
-
-    $cmd = "sudo -u $sudoUser -i 'ssh -i $sudoCertPath cat $envPath'";
-    $result = executeShellCommand($cmd);
+    $cmd = "cat $envPath";
+    $result = executeRemoteCommand($cmd, $_ENV['SUDO_USER'], $_ENV['SUDO_CERT_PATH']);
 
     if ($result['return_var'] !== 0) {
         $envContent = ''; // Deixa em branco para edição e criação do ENV
@@ -139,11 +136,11 @@ function deploy($params) {
 
     $cmd = "
         cd $repoPath &&
-        GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git fetch origin &&
-        GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git checkout $branch &&
+        GIT_SSL_NO_VERIFY=true git fetch origin &&
+        GIT_SSL_NO_VERIFY=true git checkout $branch &&
         sudo -u $sudoUser -i 'ssh -i $sudoCertPath sh " . __DIR__ . '/../scripts/deploy.sh' . " $envPath'
     ";
-    $result = executeShellCommand($cmd);
+    $result = executeRemoteCommand($cmd, $sudoUser, $certPath);
 
     return json_encode(['status' => $result['return_var'] == 0 ? 'success' : 'failure']);
 }
