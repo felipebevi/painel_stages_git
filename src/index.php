@@ -47,34 +47,48 @@ function listEnvironments() {
     return json_encode($data);
 }
 
+function getRepoUrl($environment) {
+    $baseRepoUrl = $_ENV['BASE_REPO_URL'];
+    if (strpos($environment, 'api') !== false) {
+        return "$baseRepoUrl/{$_ENV['API_REPO']}";
+    } elseif (strpos($environment, 'off') !== false) {
+        return "$baseRepoUrl/{$_ENV['BACKOFFICE_REPO']}";
+    } else {
+        return "$baseRepoUrl/{$_ENV['WEB_APP_REPO']}";
+    }
+}
+
+function executeShellCommand($cmd) {
+    error_log("Executing command: $cmd");
+    exec($cmd, $output, $return_var);
+    error_log("Command result: " . print_r($output, true));
+    error_log("Command return value: $return_var");
+
+    return ['output' => $output, 'return_var' => $return_var];
+}
+
 function listBranches($environment) {
-    $envVarName = strtoupper($environment) . '_REPO_URL';
-    $repoUrl = getenv($envVarName);
+    $repoUrl = getRepoUrl($environment);
     
     error_log("Environment: $environment");
-    error_log("Environment Variable: $envVarName");
     error_log("Repository URL: $repoUrl");
 
     if (!$repoUrl) {
+        error_log("Error: Repository URL for $environment not found.");
         return json_encode(['error' => 'Invalid environment']);
     }
 
     $certPath = $_ENV['GIT_CERT_PATH'];
-    $branches = [];
     $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git ls-remote --heads $repoUrl";
+    $result = executeShellCommand($cmd);
 
-    error_log("Executing command: $cmd");
-    exec($cmd, $branches, $return_var);
-    error_log("Command result: " . print_r($branches, true));
-    error_log("Command return value: $return_var");
-
-    if ($return_var !== 0) {
+    if ($result['return_var'] !== 0) {
         return json_encode(['error' => 'Failed to list branches']);
     }
 
     $branchNames = array_map(function($line) {
         return preg_replace('/^.*refs\/heads\//', '', $line);
-    }, $branches);
+    }, $result['output']);
 
     return json_encode($branchNames);
 }
@@ -85,15 +99,12 @@ function getEnvironment($name) {
     $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
     $cmd = "sudo -u $sudoUser -i 'ssh -i $sudoCertPath cat $envPath'";
-    error_log("Executing command: $cmd");
-    exec($cmd, $output, $return_var);
-    error_log("Command result: " . print_r($output, true));
-    error_log("Command return value: $return_var");
+    $result = executeShellCommand($cmd);
 
-    if ($return_var !== 0) {
+    if ($result['return_var'] !== 0) {
         $envContent = ''; // Deixa em branco para edição e criação do ENV
     } else {
-        $envContent = implode("\n", $output);
+        $envContent = implode("\n", $result['output']);
     }
 
     return $envContent;
@@ -114,13 +125,9 @@ function deploy($params) {
         GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git checkout $branch &&
         sudo -u $sudoUser -i 'ssh -i $sudoCertPath sh " . __DIR__ . '/../scripts/deploy.sh' . " $envPath'
     ";
+    $result = executeShellCommand($cmd);
 
-    error_log("Executing command: $cmd");
-    exec($cmd, $output, $return_var);
-    error_log("Command result: " . print_r($output, true));
-    error_log("Command return value: $return_var");
-
-    return json_encode(['status' => $return_var == 0 ? 'success' : 'failure']);
+    return json_encode(['status' => $result['return_var'] == 0 ? 'success' : 'failure']);
 }
 
 function getEnvPath($envName) {
