@@ -68,12 +68,17 @@ function listBranches($response) {
     $repoPath = $_ENV['GIT_REPO_PATH'];
     $certPath = $_ENV['GIT_CERT_PATH'];
     $branches = [];
-    $comm = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git -C $repoPath branch -r";
+    $cmd = "cd $repoPath && GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git branch -r";
 
-    exec($comm, $branches);
-    error_log(print_r(array($comm, $branches),true));
+    exec($cmd, $branches, $return_var);
+    error_log(print_r(array($cmd, $branches), true));
 
-    $response->getBody()->write(json_encode($branches));
+    if ($return_var !== 0) {
+        $response->getBody()->write(json_encode(['error' => 'Failed to list branches']));
+    } else {
+        $response->getBody()->write(json_encode($branches));
+    }
+
     return $response->withHeader('Content-Type', 'application/json');
 }
 
@@ -190,3 +195,5 @@ function generateUrl($envName, $stageNumber) {
         }
     }
 }
+
+$app->run($request);
