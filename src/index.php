@@ -69,7 +69,7 @@ function getRepoPath($environment) {
 }
 
 function executeRemoteCommand($cmd, $user, $certPath) {
-    $remoteCmd = "ssh -i $certPath $user@localhost '$cmd'";
+    $remoteCmd = "ssh -i $certPath -p 35035 $user@localhost '$cmd'";
     error_log("Executing remote command: $remoteCmd");
     exec($remoteCmd . ' 2>&1', $output, $return_var);
     error_log("Command result: " . print_r($output, true));
@@ -143,7 +143,7 @@ function deploy($params) {
         cd $repoPath &&
         GIT_SSL_NO_VERIFY=true git fetch origin &&
         GIT_SSL_NO_VERIFY=true git checkout $branch &&
-        sudo -u $sudoUser -i 'ssh -i $sudoCertPath sh " . __DIR__ . '/../scripts/deploy.sh' . " $envPath'
+        sudo -u $sudoUser -i 'ssh -i $sudoCertPath -p 35035 sh " . __DIR__ . '/../scripts/deploy.sh' . " $envPath'
     ";
     $result = executeRemoteCommand($cmd, $sudoUser, $sudoCertPath);
 
