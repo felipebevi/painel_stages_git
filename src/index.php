@@ -7,11 +7,13 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
 use Dotenv\Dotenv;
+use Nyholm\Psr7\Factory\Psr17Factory;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
-$app = AppFactory::create();
+$psr17Factory = new Psr17Factory();
+$app = AppFactory::create($psr17Factory, $psr17Factory, $psr17Factory);
 
 // Listar ambientes
 $app->get('/environments', function ($request, $response, $args) {
