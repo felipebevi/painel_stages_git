@@ -45,7 +45,10 @@
         </div>
     </div>
 </div>
-
-<script src="app.js"></script>
+<script>
+    var script = document.createElement('script');
+    script.src = 'app.js?' + Math.floor(Math.random() * 1000000);
+    document.head.appendChild(script);
+</script>
 </body>
 </html>
