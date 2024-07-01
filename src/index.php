@@ -80,10 +80,10 @@ function listBranches($environment) {
 function getEnvironment($name) {
     $envPath = getEnvPath($name) . '/.env';
 
-    if (file_exists($envPath)) {
+    if (is_readable($envPath)) {
         $envContent = file_get_contents($envPath);
     } else {
-        $envContent = file_get_contents(__DIR__ . '/../envs/example.env');
+        $envContent = ''; // Deixa em branco para edição e criação do ENV
     }
 
     return $envContent;
