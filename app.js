@@ -24,6 +24,10 @@ $(document).ready(function() {
         }
     }
 
+    // Inicializar os selects
+    $('#environmentSelect').append(new Option('Select a stage', ''));
+    $('#branchSelect').append(new Option('No branches or no git configured yet', ''));
+
     // Fetch environments
     $.get(baseUrl, { path: 'environments' }, function(data) {
         console.log('Environments response:', data);
@@ -42,19 +46,34 @@ $(document).ready(function() {
     // Fetch branches when an environment is selected
     $('#environmentSelect').change(function() {
         const environment = $(this).val();
+        if (environment === '') {
+            $('#branchSelect').empty();
+            $('#branchSelect').append(new Option('No branches or no git configured yet', ''));
+            $('#editEnvBtn').hide();
+            $('#deployBtn').hide();
+            return;
+        }
+
         $.get(baseUrl, { path: 'branches', environment: environment }, function(data) {
             console.log('Branches response:', data);
             const branches = safeJsonParse(data);
-            if (branches && Array.isArray(branches)) {
-                $('#branchSelect').empty();
+            $('#branchSelect').empty();
+            if (branches && Array.isArray(branches) && branches.length > 0) {
                 branches.forEach(function(branch) {
                     $('#branchSelect').append(new Option(branch, branch));
                 });
             } else {
+                $('#branchSelect').append(new Option('No branches or no git configured yet', ''));
                 console.log('Failed to load branches: ', branches);
             }
+            $('#editEnvBtn').show();
+            $('#deployBtn').show();
         }).fail(function(jqXHR, textStatus, errorThrown) {
             console.error('AJAX error: ', textStatus, ' : ', errorThrown);
+            $('#branchSelect').empty();
+            $('#branchSelect').append(new Option('No branches or no git configured yet', ''));
+            $('#editEnvBtn').hide();
+            $('#deployBtn').hide();
         });
     });
 
@@ -128,4 +147,8 @@ $(document).ready(function() {
             }
         });
     });
+
+    // Inicialmente esconder os botões
+    $('#editEnvBtn').hide();
+    $('#deployBtn').hide();
 });
