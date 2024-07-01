@@ -1,20 +1,38 @@
 $(document).ready(function() {
     const baseUrl = '/painel_stages_git/src/index.php'; // Base URL para as requisições
 
+    // Função para lidar com respostas JSON de forma segura
+    function safeJsonParse(responseText) {
+        try {
+            return JSON.parse(responseText);
+        } catch (e) {
+            console.error('JSON parse error: ', e);
+            return null;
+        }
+    }
+
     // Fetch environments
     $.get(baseUrl, { path: 'environments' }, function(data) {
-        const environments = JSON.parse(data);
-        environments.forEach(function(env) {
-            $('#environmentSelect').append(new Option(env.name, env.name));
-        });
+        const environments = safeJsonParse(data);
+        if (environments) {
+            environments.forEach(function(env) {
+                $('#environmentSelect').append(new Option(env.name, env.name));
+            });
+        } else {
+            alert('Failed to load environments');
+        }
     });
 
     // Fetch branches
     $.get(baseUrl, { path: 'branches' }, function(data) {
-        const branches = JSON.parse(data);
-        branches.forEach(function(branch) {
-            $('#branchSelect').append(new Option(branch, branch));
-        });
+        const branches = safeJsonParse(data);
+        if (branches) {
+            branches.forEach(function(branch) {
+                $('#branchSelect').append(new Option(branch, branch));
+            });
+        } else {
+            alert('Failed to load branches');
+        }
     });
 
     // Edit ENV button click
@@ -73,7 +91,12 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
-                alert('Deployment successful');
+                const result = safeJsonParse(response);
+                if (result && result.status === 'success') {
+                    alert('Deployment successful');
+                } else {
+                    alert('Deployment failed');
+                }
             },
             error: function() {
                 alert('Deployment failed');
