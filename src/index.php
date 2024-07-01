@@ -79,7 +79,7 @@ function listBranches($environment) {
     }
 
     $certPath = $_ENV['GIT_CERT_PATH'];
-    $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git ls-remote --heads $repoUrl";
+    $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git ls-remote --heads"; //  $repoUrl
     $result = executeShellCommand($cmd);
 
     if ($result['return_var'] !== 0) {
