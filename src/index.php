@@ -11,6 +11,7 @@ use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Factory\UriFactory;
+use Slim\Factory\ServerRequestCreatorFactory;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
@@ -24,10 +25,12 @@ $uriFactory = new UriFactory();
 // Configura Slim para usar as fábricas PSR-17
 AppFactory::setResponseFactory($responseFactory);
 AppFactory::setStreamFactory($streamFactory);
-AppFactory::setServerRequestFactory($serverRequestFactory);
 AppFactory::setUriFactory($uriFactory);
 
 $app = AppFactory::create();
+
+$serverRequestCreator = ServerRequestCreatorFactory::create();
+$request = $serverRequestCreator->createServerRequestFromGlobals();
 
 // Listar ambientes
 $app->get('/environments', function ($request, $response, $args) {
@@ -156,4 +159,4 @@ function generateUrl($envName, $stageNumber) {
     }
 }
 
-$app->run();
+$app->run($request);
