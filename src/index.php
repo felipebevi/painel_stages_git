@@ -70,7 +70,7 @@ function getRepoPath($environment) {
 
 function executeShellCommand($cmd) {
     error_log("Executing command: $cmd");
-    exec($cmd, $output, $return_var);
+    exec($cmd . ' 2>&1', $output, $return_var);
     error_log("Command result: " . print_r($output, true));
     error_log("Command return value: $return_var");
 
@@ -88,11 +88,20 @@ function listBranches($environment) {
         return json_encode(['error' => 'Invalid environment']);
     }
 
-    $cmd = "GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i {$_ENV['GIT_CERT_PATH']}' git -C $repoPath branch -r";
+    // Verifica se o diretório é um repositório Git
+    $cmd = "cd $repoPath && git rev-parse --is-inside-work-tree";
+    $result = executeShellCommand($cmd);
+
+    if (trim(implode("\n", $result['output'])) !== 'true') {
+        error_log("Error: The directory is not a Git repository.");
+        return json_encode(['error' => 'The directory is not a Git repository.']);
+    }
+
+    $cmd = "cd $repoPath && GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i {$_ENV['GIT_CERT_PATH']}' git branch -r";
     $result = executeShellCommand($cmd);
 
     if ($result['return_var'] !== 0) {
-        return json_encode(['error' => 'Failed to list branches']);
+        return json_encode(['error' => 'Failed to list branches, command returned ' . $result['return_var']]);
     }
 
     $branchNames = array_map(function($line) {
