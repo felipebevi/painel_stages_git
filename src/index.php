@@ -69,7 +69,7 @@ function getRepoPath($environment) {
 }
 
 function executeRemoteCommand($cmd, $user, $certPath) {
-    $remoteCmd = "ssh -i $certPath -p 35035 $user@localhost '$cmd'";
+    $remoteCmd = "ssh -i $certPath -p 35035 $user@localhost 'sudo -u root $cmd'";
     error_log("Executing remote command: $remoteCmd");
     exec($remoteCmd . ' 2>&1', $output, $return_var);
     error_log("Command result: " . print_r($output, true));
