@@ -5,32 +5,21 @@ error_reporting(E_ALL);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Slim\Factory\AppFactory;
 use Dotenv\Dotenv;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Factory\StreamFactory;
-use Slim\Factory\ServerRequestCreatorFactory;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
-// Cria as fábricas PSR-17 e PSR-7
 $responseFactory = new ResponseFactory();
 $serverRequestFactory = new ServerRequestFactory();
 $streamFactory = new StreamFactory();
 
-// Configura Slim para usar as fábricas PSR-17
-AppFactory::setResponseFactory($responseFactory);
-AppFactory::setStreamFactory($streamFactory);
+$request = $serverRequestFactory->createServerRequestFromGlobals();
 
-$app = AppFactory::create();
-
-$serverRequestCreator = ServerRequestCreatorFactory::create();
-$request = $serverRequestCreator->createServerRequestFromGlobals();
-
-// Função para listar ambientes
-function listEnvironments($response) {
+function listEnvironments() {
     $stages = explode(',', $_ENV['STAGES']);
     $data = [];
 
@@ -59,12 +48,10 @@ function listEnvironments($response) {
         }
     }
 
-    $response->getBody()->write(json_encode($data));
-    return $response->withHeader('Content-Type', 'application/json');
+    return json_encode($data);
 }
 
-// Função para listar branches do repositório
-function listBranches($response) {
+function listBranches() {
     $repoPath = $_ENV['GIT_REPO_PATH'];
     $certPath = $_ENV['GIT_CERT_PATH'];
     $branches = [];
@@ -74,16 +61,13 @@ function listBranches($response) {
     error_log(print_r(array($cmd, $branches), true));
 
     if ($return_var !== 0) {
-        $response->getBody()->write(json_encode(['error' => 'Failed to list branches']));
-    } else {
-        $response->getBody()->write(json_encode($branches));
+        return json_encode(['error' => 'Failed to list branches']);
     }
 
-    return $response->withHeader('Content-Type', 'application/json');
+    return json_encode($branches);
 }
 
-// Função para listar ENV de um ambiente
-function getEnvironment($name, $response) {
+function getEnvironment($name) {
     $envPath = getEnvPath($name) . '/.env';
 
     if (file_exists($envPath)) {
@@ -92,12 +76,10 @@ function getEnvironment($name, $response) {
         $envContent = file_get_contents(__DIR__ . '/../envs/example.env');
     }
 
-    $response->getBody()->write($envContent);
-    return $response->withHeader('Content-Type', 'text/plain');
+    return $envContent;
 }
 
-// Função para atualizar ambiente com nova branch e executar script SH
-function deploy($params, $response) {
+function deploy($params) {
     $envName = $params['environment'];
     $branch = $params['branch'];
     $envPath = getEnvPath($envName);
@@ -106,7 +88,6 @@ function deploy($params, $response) {
     $sudoUser = $_ENV['SUDO_USER'];
     $sudoCertPath = $_ENV['SUDO_CERT_PATH'];
 
-    // Trocar para o branch e executar script SH
     $cmd = "
         cd $repoPath &&
         GIT_SSL_NO_VERIFY=true GIT_SSH_COMMAND='ssh -i $certPath' git fetch origin &&
@@ -115,44 +96,8 @@ function deploy($params, $response) {
     ";
     exec($cmd, $output, $return_var);
 
-    $response->getBody()->write(json_encode(['status' => $return_var == 0 ? 'success' : 'failure']));
-    return $response->withHeader('Content-Type', 'application/json');
+    return json_encode(['status' => $return_var == 0 ? 'success' : 'failure']);
 }
-
-// Roteamento baseado em query string
-$path = isset($_GET['path']) ? $_GET['path'] : '';
-switch ($path) {
-    case 'environments':
-        $response = listEnvironments($responseFactory->createResponse());
-        break;
-    case 'branches':
-        $response = listBranches($responseFactory->createResponse());
-        break;
-    case 'environment':
-        if (isset($_GET['name'])) {
-            $response = getEnvironment($_GET['name'], $responseFactory->createResponse());
-        } else {
-            $response = $responseFactory->createResponse(400)->withBody($streamFactory->createStream('Missing parameter: name'));
-        }
-        break;
-    case 'deploy':
-        $params = (array)$request->getParsedBody();
-        $response = deploy($params, $responseFactory->createResponse());
-        break;
-    default:
-        $response = $responseFactory->createResponse()->withBody($streamFactory->createStream('SERVICO OK'));
-        break;
-}
-
-$headers = $response->getHeaders();
-foreach ($headers as $name => $values) {
-    foreach ($values as $value) {
-        header(sprintf('%s: %s', $name, $value), false);
-    }
-}
-
-http_response_code($response->getStatusCode());
-echo $response->getBody();
 
 function getEnvPath($envName) {
     $stageNumber = intval(preg_replace('/[^0-9]/', '', $envName));
@@ -196,4 +141,36 @@ function generateUrl($envName, $stageNumber) {
     }
 }
 
-$app->run($request);
+// Processamento baseado em query string
+$path = isset($_GET['path']) ? $_GET['path'] : '';
+$responseBody = '';
+$contentType = 'application/json';
+
+switch ($path) {
+    case 'environments':
+        $responseBody = listEnvironments();
+        break;
+    case 'branches':
+        $responseBody = listBranches();
+        break;
+    case 'environment':
+        if (isset($_GET['name'])) {
+            $responseBody = getEnvironment($_GET['name']);
+            $contentType = 'text/plain';
+        } else {
+            http_response_code(400);
+            $responseBody = 'Missing parameter: name';
+        }
+        break;
+    case 'deploy':
+        $params = (array)json_decode(file_get_contents('php://input'), true);
+        $responseBody = deploy($params);
+        break;
+    default:
+        $responseBody = 'SERVICO OK';
+        $contentType = 'text/plain';
+        break;
+}
+
+header('Content-Type: ' . $contentType);
+echo $responseBody;
